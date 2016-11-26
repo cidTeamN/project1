@@ -1,18 +1,22 @@
 import java.net.*;
 import java.io.*;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.json.simple.*;
+import org.json.simple.parser.*;
+import org.apache.commons.*;
+
+import redis.clients.jedis.*;
+import redis.clients.util.*;
 
 public class Server
 {
-	int MAX_AD = 200000;
+	static int MAX_AD = 200000;
 	static QueueList info;
 	static Integer key = 0;
 	static int MAX_LEN = 10;
 	static int NUM_OF_QUEUE = 10;
-	JedisPoolConfig jedisPoolConfig;
-	public void jedisMake(JSONObject data){
-		JedisPool pool = new JedisPool(jedisPoolConfig, "127.0.0.1", "8080", 100, "password");
+	static JedisPoolConfig jedisPoolConfig;
+	public static void jedisMake(JSONObject data){
+		JedisPool pool = new JedisPool(jedisPoolConfig, "127.0.0.1", 8080, 100, "password");
 		
 		String keyString = key.toString();
 		Jedis jedis = pool.getResource();
@@ -35,9 +39,8 @@ public class Server
 				keyString = key.toString();
 			}
 		}
-		jedis.get(keyString);
-		jedis.set(keyString, data.stringify());
-		jedis.expireAt(key, Integer.parseInt(data.get("season")));
+		jedis.set(keyString, data.toString());
+		jedis.expireAt(keyString, Integer.parseInt((String) data.get("season")));
 		key = (key + 1) % MAX_AD;
 		if(jedis != null){
 			jedis.close();
@@ -45,24 +48,23 @@ public class Server
 		Integer score = scoring(data);
 		info.addInQueueList(key, score);
 	}
-	private Integer scoring(JSONObject data)
+	private static Integer scoring(JSONObject data)
 	{
 		Integer score = 0;
 		return score;
 	}
 	public void queueFlush()
 	{
-		JedisPool pool = new JedisPool(jedisPoolConfig, "127.0.0.1", "8080", 100, "password");
+		JedisPool pool = new JedisPool(jedisPoolConfig, "127.0.0.1", 8080, 100, "password");
 		
 		Jedis jedis = pool.getResource();
 		for(int i = 0;i<NUM_OF_QUEUE;++i)
 		{
 			for(int j=0;j<MAX_LEN;++j)
 			{
-				if(jedis.get(info.get(i,j)) == NULL)
+				if(jedis.get(info.get(i,j)) == null)
 				{
 					info.remove(i, j);
-				}
 				}
 			}
 		}
@@ -98,7 +100,7 @@ public class Server
 						if((strRslt=net.strGetData()) != null)
 						{
 							// parsing json
-							JSONObject data = parser.parse(strRslt);
+							JSONObject data = (JSONObject) parser.parse(strRslt);
 							// insert to db
 							jedisMake(data);
 						}
