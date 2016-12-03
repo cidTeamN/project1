@@ -1,5 +1,6 @@
 import java.net.*;
 import java.io.*;
+
 import org.json.simple.*;
 import org.json.simple.parser.*;
 import org.apache.commons.*;
@@ -16,10 +17,15 @@ public class Server
 	static int NUM_OF_QUEUE = 10;
 	static JedisPoolConfig jedisPoolConfig;
 	public static void jedisMake(JSONObject data){
-		JedisPool pool = new JedisPool(jedisPoolConfig, "127.0.0.1", 8080, 100, "password");
-		
+		JedisPool pool = new JedisPool(jedisPoolConfig, "localhost", 6379);
 		String keyString = key.toString();
 		Jedis jedis = pool.getResource();
+		
+		if(data == null)
+		{
+			jedis.set("NULL", "TEST");
+		}
+		
 		int keyFlag = key - 1;
 		boolean databaseFull = false;
 		while(true)
@@ -64,14 +70,15 @@ public class Server
 			{
 				if(jedis.get(info.get(i,j)) == null)
 				{
-					info.remove(i, j);
+					//info.remove(i, j);
 				}
 			}
 		}
 	}
+	@SuppressWarnings("deprecation")
 	public static void main(String[] args) throws IOException
 	{
-		info = new QueueList(MAX_LEN, NUM_OF_QUEUE);
+		info = new QueueList();
 		ServerSocket serverSocket = null;
 		Socket socket = null;
 		DataInputStream dataInputStream = null;
@@ -80,15 +87,16 @@ public class Server
 		String strRslt = null;
 		jedisPoolConfig = new JedisPoolConfig();
 		jedisPoolConfig.setMaxTotal(128);
+		jedisMake(null);
 		try
 		{
-			serverSocket = new ServerSocket(88);
+			serverSocket = new ServerSocket(8765);
 			
 			while(true)
 			{
 				System.out.println("Waiting...\n");
 				socket = serverSocket.accept();
-				
+				System.out.println("Server socket accepted");
 				dataInputStream = new DataInputStream(socket.getInputStream());
 				dataOutputStream = new DataOutputStream(socket.getOutputStream());
 				
@@ -96,11 +104,13 @@ public class Server
 				{
 					try
 					{
-						HttpNetwork net = new HttpNetwork("http://127.0.0.1");
-						if((strRslt=net.strGetData()) != null)
+						System.out.println("try to connect Request server");
+						HttpNetwork net = new HttpNetwork("http://192.168.0.9");
+						if((strRslt=dataInputStream.readLine()) != null)
 						{
 							// parsing json
 							JSONObject data = (JSONObject) parser.parse(strRslt);
+							System.out.println(data.toString());
 							// insert to db
 							jedisMake(data);
 						}
@@ -113,6 +123,7 @@ public class Server
 					}
 					catch(Exception e)	// 클라이언트 접속 종료
 					{
+						System.out.println("client disconnected");
 						break;
 					}
 				}
