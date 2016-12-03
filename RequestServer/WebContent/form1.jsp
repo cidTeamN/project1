@@ -67,23 +67,17 @@ Info.put("upload",upload);
 out.print(Info);
 
 String sResult = "";
-String sTargetUrl = "http://192.168.0.7:8765";
-URL url = null;
-url = new URL(sTargetUrl);
-HttpURLConnection urlConn = null;
-urlConn = (HttpURLConnection) url.openConnection();
-urlConn.setDoInput (true);
-urlConn.setDoOutput (true);
-urlConn.setRequestMethod("POST");
-urlConn.setRequestProperty("Content-Type", "application/json");
-urlConn.connect();
+String sTargetUrl = "192.168.219.108";
+Socket socket = new Socket(sTargetUrl, 8765);
+System.out.println("Connected to host");
 try {
 	DataOutputStream output = null;
-	output = new DataOutputStream(urlConn.getOutputStream());
+	output = new DataOutputStream(socket.getOutputStream());
 	output.writeUTF(Info.toString());
 	output.flush();
 	output.close();
-	urlConn.disconnect();
+	socket.close();
+	System.out.println("Disconnected from host");
 } catch (IOException e) {
 	System.out.println("It can't");
 }
