@@ -1,0 +1,70 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="Content-Type" content="text⁄html;charset=utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link href="./webs.css" rel="stylesheet" type="text/css"></link>
+	<title>청약 사이트</title>		
+</head>
+<script type="text/javascript">
+function createXMLHttpRequest(){
+  // See http://en.wikipedia.org/wiki/XMLHttpRequest
+  // Provide the XMLHttpRequest class for IE 5.x-6.x:
+  if( typeof XMLHttpRequest == "undefined" ) XMLHttpRequest = function() {
+    try { return new ActiveXObject("Msxml2.XMLHTTP.6.0") } catch(e) {}
+    try { return new ActiveXObject("Msxml2.XMLHTTP.3.0") } catch(e) {}
+    try { return new ActiveXObject("Msxml2.XMLHTTP") } catch(e) {}
+    try { return new ActiveXObject("Microsoft.XMLHTTP") } catch(e) {}
+    throw new Error( "This browser does not support XMLHttpRequest." )
+  };
+  return new XMLHttpRequest();
+}
+ 
+var AJAX = createXMLHttpRequest();
+ 
+function handler() {
+  if(AJAX.readyState == 4 && AJAX.status == 200) {
+      var json = eval('(' + AJAX.responseText +')');
+      alert('Success. Result: name => ' + json.name + ',' + 'balance => ' + json.balance);
+  }else if (AJAX.readyState == 4 && AJAX.status != 200) {
+    alert('Something went wrong...');
+  }
+}
+
+function show(){
+  AJAX.onreadystatechange = handler;
+  AJAX.open("GET", "form1.jsp");
+  AJAX.send("");
+};
+</script>
+<body>
+	<header id="header">
+			<div class="inner">
+				<a href="#" class="logo">TeamN</a>
+				<nav id="nav">
+                	<a href="#">Home</a></li>
+                    <a href="ad.html">광고 청약</a></li>
+	            </nav>
+	        </div>
+		</header>
+		<a href="#menu" class="navPanelToggle"><span class="fa fa-bars"></span></a>
+		
+		<!-- Banner -->
+			<section id="banner">
+				<div class="inner">
+					<h1>광고청약: <br/>
+					<span>We'll gonna be your friendly partner</span></h1>
+					<ul class="actions"><li>
+					<a href="ad.html" class="button alt">Make Forms</a></li>
+					</ul>
+				</div>
+			</section>
+
+	<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/skel.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+</body>
+</html>
