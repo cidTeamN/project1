@@ -1,4 +1,10 @@
 import java.net.*;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.PriorityQueue;
 import java.io.*;
 
 import org.json.simple.*;
@@ -13,9 +19,10 @@ public class Server
 	static int MAX_AD = 200000;
 	static QueueList info;
 	static Integer key = 0;
-	static int MAX_LEN = 10;
+	static int MAX_LEN = 100;
 	static int NUM_OF_QUEUE = 10;
 	static JedisPoolConfig jedisPoolConfig;
+	
 	public static void jedisMake(JSONObject data){
 		JedisPool pool = new JedisPool(jedisPoolConfig, "localhost", 6379);
 		String keyString = key.toString();
@@ -24,6 +31,9 @@ public class Server
 		if(data == null)
 		{
 			jedis.set("NULL", "TEST");
+			jedis.close();
+			pool.close();
+			return;
 		}
 		
 		int keyFlag = key - 1;
@@ -45,69 +55,135 @@ public class Server
 				keyString = key.toString();
 			}
 		}
+		if(databaseFull)
+		{
+			System.out.println("Database has no room for AD");
+			jedis.close();
+			pool.close();
+			return;
+		}
 		jedis.set(keyString, data.toString());
-		jedis.expireAt(keyString, Integer.parseInt((String) data.get("season")));
+		jedis.expireAt(keyString, toUnixTimeStamp((String) data.get("season")));
+		info.addInQueueList(key, data);
+		
 		key = (key + 1) % MAX_AD;
 		if(jedis != null){
 			jedis.close();
 		}
-		Integer score = scoring(data);
-		info.addInQueueList(key, score);
-	}
-	private static Integer scoring(JSONObject data)
-	{
-		Integer score = 0;
-		return score;
-	}
-	public void queueFlush()
-	{
-		JedisPool pool = new JedisPool(jedisPoolConfig, "127.0.0.1", 8080, 100, "password");
 		
+		pool.close();
+	}
+	
+	public static long toUnixTimeStamp(String season)
+	{
+		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		Date date = null;
+		try {
+			date = dateFormat.parse(season);
+		} catch (ParseException e) {
+			System.out.println("Invalid date form");
+			return -1;
+		}
+		long unixTime = (long) date.getTime()/1000;
+		return unixTime;
+	}
+	
+	public static QueueEntity rating(QueueEntity e)
+	{
+		JedisPool pool = new JedisPool(jedisPoolConfig, "localhost", 6379);
+		String keyString = ((Integer) e.ID).toString();
 		Jedis jedis = pool.getResource();
-		for(int i = 0;i<NUM_OF_QUEUE;++i)
+		JSONParser parser = new JSONParser();
+		JSONObject data = null;
+		try{
+			data = (JSONObject) parser.parse(jedis.get(keyString));
+		}catch(Exception error){ e = null; }
+		
+		// compute priority with urgency, len
+		
+		jedis.close();
+		pool.close();
+		return e;
+	}
+	
+	public static int getAdID(int usersex, int userrating, double[] cat)
+	{
+		int AdID = -1;	// AdID = -1 -> ad for RTB system
+		int qid = info.findNearestQueueID(usersex, userrating, cat);
+		PriorityQueue<QueueEntity> selectedQueue = info.getQueue(qid);
+		PriorityQueue<QueueEntity> calculatedQueue = new PriorityQueue<QueueEntity>();
+		QueueEntity e = null;
+		while((e = selectedQueue.poll()) != null)
 		{
-			for(int j=0;j<MAX_LEN;++j)
+			QueueEntity rated = rating(e);
+			if(rated == null)
 			{
-				if(jedis.get(info.get(i,j)) == null)
-				{
-					//info.remove(i, j);
-				}
+				info.deleteFromQueueList(e.ID);
+				continue;
+			}
+			else
+			{
+				calculatedQueue.add(rated);
 			}
 		}
+		
+		// send bidding request to bid server for 10% elements in calculatedQueue
+		
+		return AdID;
 	}
-	@SuppressWarnings("deprecation")
 	public static void main(String[] args) throws IOException
 	{
-		info = new QueueList();
+		Comparator<QueueEntity> QueueEntityComparator = new QueueEntityComparator();
+		PriorityQueue<QueueEntity> testQueue = new PriorityQueue<QueueEntity>(MAX_LEN, QueueEntityComparator);
+		//System.out.println(testQueue.comparator());
+		QueueEntity e1 = new QueueEntity(2, 1);
+		QueueEntity e2 = new QueueEntity(3, 3);
+		QueueEntity e3 = new QueueEntity(1, 2);
+		testQueue.add(e1);
+		testQueue.add(e2);
+		testQueue.add(e3);
+		System.out.println("Check1");
+		System.out.print(testQueue.poll().ID);
+		System.out.print(testQueue.poll().ID);
+		System.out.print(testQueue.poll().ID);
+		System.out.println(testQueue.poll());
+		String x = "abc";
+		String[] arr = x.split(":");
+		System.out.println(arr[0]);
+		System.out.println(arr.length);
+		info = new QueueList(MAX_LEN);
 		ServerSocket serverSocket = null;
 		Socket socket = null;
-		DataInputStream dataInputStream = null;
-		DataOutputStream dataOutputStream = null;
 		JSONParser parser = new JSONParser();
 		String strRslt = null;
 		jedisPoolConfig = new JedisPoolConfig();
 		jedisPoolConfig.setMaxTotal(128);
-		jedisMake(null);
+		//jedisMake(null);
 		try
 		{
-			serverSocket = new ServerSocket(8765);
-			
 			while(true)
 			{
-				System.out.println("Waiting...\n");
-				socket = serverSocket.accept();
-				System.out.println("Server socket accepted");
-				dataInputStream = new DataInputStream(socket.getInputStream());
-				dataOutputStream = new DataOutputStream(socket.getOutputStream());
-				
+				serverSocket = new ServerSocket(8765);
 				while(true)
 				{
+					System.out.println("Waiting...\n");
+					socket = serverSocket.accept();
+					System.out.println("Server socket accepted");
+					//BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+					socket.setSoTimeout(3000);
+					DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+					//dataOutputStream = new DataOutputStream(socket.getOutputStream());
+					
 					try
 					{
-						System.out.println("try to connect Request server");
-						HttpNetwork net = new HttpNetwork("http://192.168.0.9");
-						if((strRslt=dataInputStream.readLine()) != null)
+						System.out.println("try to read input stream");
+						//if(socket.getInputStream() == null) System.out.println("Cannot get inputstream");
+						
+						//HttpNetwork net = new HttpNetwork("http://192.168.0.9");
+						
+						if((strRslt=dataInputStream.readUTF()) != null)
 						{
+							System.out.println("read data");
 							// parsing json
 							JSONObject data = (JSONObject) parser.parse(strRslt);
 							System.out.println(data.toString());
@@ -121,13 +197,14 @@ public class Server
 						System.out.printf("Server:received  %s\n", dataInputStream.readUTF());
 						*/
 					}
-					catch(Exception e)	// 클라이언트 접속 종료
+					catch(Exception e)	// 
 					{
 						System.out.println("client disconnected");
 						break;
 					}
 				}
-				socket.close();
+				if(socket != null) socket.close();
+				if(serverSocket != null) serverSocket.close();
 			}
 		}
 		catch(IOException e)
@@ -136,7 +213,7 @@ public class Server
 		}
 		finally
 		{
-			if(serverSocket != null) serverSocket.close();
+			if(socket != null) socket.close();
 		}
 	}
 }
