@@ -6,7 +6,7 @@ import java.io.OutputStream;
 
 public class Response {
 
-	private static final int BUFFER_SIZE = 1024;
+	private static final int BUFFER_SIZE = 99999999;
 	Request request;
 	OutputStream output;
 	
@@ -21,12 +21,11 @@ public class Response {
 	public void sendStaticResource() throws IOException {
 		byte[] bytes = new byte[BUFFER_SIZE];
 		FileInputStream fis = null;
-		
 		try {
 			File file = new File(HttpServer.WEB_ROOT, request.getUri());
-			
 			if(file.exists()) {
 				fis = new FileInputStream(file);
+				System.out.println("name: "+file.getName());
 				int ch = fis.read(bytes, 0, BUFFER_SIZE);
 				while(ch!=-1) {
 					System.out.println("ch1 : " + ch);

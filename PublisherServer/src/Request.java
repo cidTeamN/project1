@@ -30,6 +30,7 @@ public class Request {
 		
 		System.out.println(requestbuffer.toString());
 		uri = parseUri(requestbuffer.toString());
+		uri = removeParam(uri);
 	}
 	
 	private String parseUri(String requestString) {
@@ -42,13 +43,19 @@ public class Request {
 		if(index1 != 1) {
 			index2 = requestString.indexOf(' ', index1 + 1);
 			
-			//System.out.println(index2);
+			System.out.println(index2);
 			
 			if(index2 > index1)
 				return requestString.substring(index1 + 1, index2);
 		}
 		
 		return null;
+	}
+	
+	private String removeParam(String uriString){
+		System.out.println(uriString);
+		String temp[] = uriString.split("\\?");
+		return temp[0];
 	}
 	
 	public String getUri() {

@@ -1,8 +1,11 @@
 import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.io.*;
 
     public class MessageClient {
-        public static void main(String args[]) {
+        public static void main(String args[]) throws IOException {
             Socket clientSocket = null;
             String recieve;
             String filename = args[1];
@@ -10,7 +13,7 @@ import java.io.*;
             String text = new String(Files.readAllBytes(Paths.get(filename)), StandardCharsets.UTF_8);
 
 
-            String user_info = reader.re
+      //      String user_info = reader.re
             try {
                 clientSocket = new Socket("localhost", 8080);
                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
