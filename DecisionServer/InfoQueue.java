@@ -1,3 +1,4 @@
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.PriorityQueue;
 
@@ -31,7 +32,8 @@ public class InfoQueue
 				userrating[i] = 0;
 		}
 		cat = cat_;
-		info = new PriorityQueue<QueueEntity>(max_len);
+		Comparator<QueueEntity> QueueEntityComparator = new QueueEntityComparator();
+		info = new PriorityQueue<QueueEntity>(max_len, QueueEntityComparator);
 	}
 	public void addInQueue(QueueEntity e)
 	{
@@ -105,6 +107,15 @@ public class InfoQueue
 			dist += (cat[0]-cat_[0]) * (cat[0]-cat_[0]);
 		}
 		return CAT_RATE * dist;
+	}
+	public void print()
+	{
+		Iterator<QueueEntity> iter = info.iterator();
+		while(iter.hasNext())
+		{
+			QueueEntity it = iter.next();
+			System.out.print(it.ID +":"+ String.format("%.2f", it.var)+'\t');
+		}
 	}
 	
 }

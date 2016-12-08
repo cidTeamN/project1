@@ -1,7 +1,5 @@
 import java.util.PriorityQueue;
 import org.json.simple.*;
-import org.json.simple.parser.*;
-import org.apache.commons.*;
 
 public class QueueList
 {
@@ -70,7 +68,7 @@ public class QueueList
 			
 			// parsing
 			String[] arr1 = usersexStr.split(",");
-			for(int j = 0;i<arr1.length;++i)
+			for(int j = 0;j<arr1.length;++j)
 			{
 				if(arr1[j].equals("man"))
 				{
@@ -84,7 +82,7 @@ public class QueueList
 			String[] arr2 = userratingStr.split(",");
 			for(int j=0;j<arr2.length;++j)
 			{
-				userrating[Integer.parseInt(arr2[i].substring(arr2[i].length() - 1)) - 1] = 1;
+				userrating[Integer.parseInt(arr2[j].substring(arr2[j].length() - 1)) - 1] = 1;
 			}
 			cat = meanCategory(catStr);
 			double result = queues[i].scoring(usersex, userrating, cat);
@@ -137,5 +135,14 @@ public class QueueList
 	public PriorityQueue<QueueEntity> getQueue(int qid)
 	{
 		return queues[qid].info;
+	}
+	public void print()
+	{
+		for(int i=0; i<NUM_OF_QUEUE; ++i)
+		{
+			System.out.print("Q"+i+"  :  ");
+			queues[i].print();
+			System.out.println();
+		}
 	}
 }
