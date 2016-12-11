@@ -51,6 +51,7 @@ public class InfoQueue
 			}
 		}
 	}
+	// TODO calculating rule can be changed
 	public double scoring(double[] usersex_, double[] userrating_, double[] cat_)
 	{
 		double score = 0;
@@ -74,6 +75,7 @@ public class InfoQueue
 		score = MAX_SCORE / score;
 		return score;
 	}
+	// TODO scoring functions should be changed identically
 	public double scoring(int usersex_, int userrating_, double[] cat_)
 	{
 		double score = 0;
@@ -87,7 +89,7 @@ public class InfoQueue
 		}
 		for(int i=0;i<5;++i)
 		{
-			if((i == userrating_) ^ (0 == userrating[i]))
+			if((i == userrating_-1) ^ (0 == userrating[i]))
 				score = score + 1;
 			else
 				continue;

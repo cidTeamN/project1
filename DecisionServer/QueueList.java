@@ -122,7 +122,6 @@ public class QueueList
 		int retID = -1;
 		for(int i=0;i<NUM_OF_QUEUE;++i)
 		{
-			// Calculating rule can be changed
 			double q_score = queues[i].scoring(usersex, userrating, category);
 			if(score < q_score)
 			{
