@@ -3,7 +3,6 @@ import java.net.*;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
@@ -12,7 +11,6 @@ import java.util.PriorityQueue;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import com.sun.javafx.scene.paint.GradientUtils.Parser;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -22,7 +20,9 @@ public class RequestServerThread extends Thread{
 	BufferedReader dataInputStream;
 	OutputStreamWriter dataOutputStream;
 	static JedisPoolConfig jedisPoolConfig;
+	static JSONParser parser;
 	RequestServerThread(Socket s){
+		parser = new JSONParser();
 		socket = s;
 		jedisPoolConfig = new JedisPoolConfig();
 		jedisPoolConfig.setMaxTotal(128);
@@ -83,13 +83,13 @@ public class RequestServerThread extends Thread{
 			}
 		}
 		
+		if(calculatedQueue.size() == 0) return null;
 		// TODO send bidding request to bid server for 10% elements in calculatedQueue. percent can be changed
-		int cQueueLen = calculatedQueue.size() / 10;
+		int cQueueLen = calculatedQueue.size() / 10 + 1;
 		
 		JedisPool pool = new JedisPool(jedisPoolConfig, "localhost", 6379);
 		String keyString = ((Integer) AdID).toString();
 		Jedis jedis = pool.getResource();
-		JSONParser parser = new JSONParser();
 		JSONObject data = null;
 		Iterator<QueueEntity> iter = calculatedQueue.iterator();
 		PriorityQueue<QueueEntity> finalListQueue = new PriorityQueue<QueueEntity>(cmp);
@@ -109,7 +109,13 @@ public class RequestServerThread extends Thread{
 			if(title==null) continue;
 			
 			QueueEntity entity = ratingWithPrice(it, url, title);
-			finalListQueue.add(entity);
+			if(entity != null) finalListQueue.add(entity);
+		}
+		if(finalListQueue.size() == 0) 
+		{
+			pool.close();
+			jedis.close();
+			return null;
 		}
 		AdID = finalListQueue.peek().ID;
 		keyString = ((Integer) AdID).toString();
@@ -128,15 +134,37 @@ public class RequestServerThread extends Thread{
 		return upload;
 	}
 	private static QueueEntity ratingWithPrice(QueueEntity it, String url, String title) {
-		// TODO send bid request to bidder server and calculated priority from price and it.var
-		return null;
+		try {
+			Socket smallSocket = new Socket(url, 4567);
+			DataInputStream in = new DataInputStream(smallSocket.getInputStream());
+			DataOutputStream out = new DataOutputStream(smallSocket.getOutputStream());
+			String strTitle = "{\"title\":\""+title+"\"}";
+			out.writeUTF(strTitle);
+			out.flush();
+			String strRslt = null;
+			while((strRslt=in.readUTF()) == null)
+			{
+			}
+			
+			JSONObject priceJSON = (JSONObject) parser.parse(strRslt);
+			String strPrice = (String) priceJSON.get("price");
+			if(out!=null) out.close();
+			if(in!=null) in.close();
+			if(smallSocket!=null) smallSocket.close();
+			// TODO price reflection rate can be changed
+			it.var = it.var*0.5 + Integer.parseInt(strPrice)*0.5;
+			return it;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		
 	}
 	public static QueueEntity rating(QueueEntity e, long unixTimeNow)
 	{
 		JedisPool pool = new JedisPool(jedisPoolConfig, "localhost", 6379);
 		String keyString = ((Integer) e.ID).toString();
 		Jedis jedis = pool.getResource();
-		JSONParser parser = new JSONParser();
 		JSONObject data = null;
 		try{
 			data = (JSONObject) parser.parse(jedis.get(keyString));
@@ -193,9 +221,7 @@ public class RequestServerThread extends Thread{
 		dataOutputStream = new OutputStreamWriter(socket.getOutputStream());
 		
 		System.out.println("stream get");
-		JSONParser parser = new JSONParser();
 		String strRslt ="";
-		String strHeader="";
 		char charRslt = (char) -1;
 		boolean start = false;
 		boolean end = false;
@@ -204,10 +230,6 @@ public class RequestServerThread extends Thread{
 			//System.out.println(socket.getInetAddress());
 			//strRslt=dataInputStream.readLine();
 			charRslt=(char) dataInputStream.read();
-			if(charRslt != -1)
-			{
-				strHeader += charRslt;
-			}
 			if(charRslt=='{')
 			{
 				start = true;
@@ -241,20 +263,23 @@ public class RequestServerThread extends Thread{
 			System.out.println((String) userData.get("usersex"));
 			System.out.println((String) userData.get("userrating"));
 			System.out.println((String) userData.get("cat"));
-			imageUrl = "{\"url\" \""+getAdUrl(usersex, userrating, cat)+"\"}";
+			String strUrl = getAdUrl(usersex, userrating, cat);
+			if(strUrl != null) imageUrl = "{\"url\" \""+strUrl+"\"}";
 		}catch(Exception e){
 			e.printStackTrace();
 		};
 		
-		//String imageUrl = "hello";
-		System.out.println(strHeader);
-		dataOutputStream.write(strHeader);
-		System.out.println("Writing");
+		try{
+			dataOutputStream.write(imageUrl);
+			System.out.println("Writing");
+		}catch(Exception e){ e.printStackTrace(); }
+		
 		try{
 			dataOutputStream.flush();
 		}catch(Exception e){ e.printStackTrace(); }
 		System.out.println("Write end");
 		if(dataOutputStream != null) dataOutputStream.close();
+		if(dataInputStream != null) dataInputStream.close();
 	}
 	private double[] parseCategory(String string) {
 		
