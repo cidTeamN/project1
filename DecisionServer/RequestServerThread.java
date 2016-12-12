@@ -97,14 +97,18 @@ public class RequestServerThread extends Thread{
 		{
 			QueueEntity it = iter.next();
 			String url = null;
+			String title = null;
 			try {
 				data = (JSONObject) parser.parse(jedis.get(""+it.ID));
 				url = (String) data.get("url");
+				title = (String) data.get("title");
 			} catch (org.json.simple.parser.ParseException e1) {
 				continue;
 			}
 			if(url==null) continue;
-			QueueEntity entity = ratingWithPrice(it, url);
+			if(title==null) continue;
+			
+			QueueEntity entity = ratingWithPrice(it, url, title);
 			finalListQueue.add(entity);
 		}
 		AdID = finalListQueue.peek().ID;
@@ -123,7 +127,7 @@ public class RequestServerThread extends Thread{
 		jedis.close();
 		return upload;
 	}
-	private static QueueEntity ratingWithPrice(QueueEntity it, String url) {
+	private static QueueEntity ratingWithPrice(QueueEntity it, String url, String title) {
 		// TODO send bid request to bidder server and calculated priority from price and it.var
 		return null;
 	}
@@ -253,8 +257,58 @@ public class RequestServerThread extends Thread{
 		if(dataOutputStream != null) dataOutputStream.close();
 	}
 	private double[] parseCategory(String string) {
-		// TODO parsing
-		return null;
+		
+		if(string.equals("health"))
+		{
+			double[] result = { 5.0, 0.0, 4.5, 2.5 };
+			return result;
+		}
+		else if(string.equals("child"))
+		{
+			double[] result = { 2.5, 1.0, -1.0, -2.5 };
+			return result;
+		}
+		else if(string.equals("politics"))
+		{
+			double[] result = { -0.5, 5.0, -4.5, -3.5 };
+			return result;
+		}
+		else if(string.equals("fashion"))
+		{
+			double[] result = { 2.5, -2.0, 4.0, 3.5 };
+			return result;
+		}
+		else if(string.equals("pet"))
+		{
+			double[] result = { 3.0, -5.0, 3.5, -1.0 };
+			return result;
+		}
+		else if(string.equals("drama"))
+		{
+			double[] result = { -4.5, -4.0, 4.5, -0.5 };
+			return result;
+		}
+		else if(string.equals("game"))
+		{
+			double[] result = { 4.5, -5.0, 5.0, 4.0 };
+			return result;
+		}
+		else if(string.equals("leisure"))
+		{
+			double[] result = { 4.0, -4.0, -2.0, -2.5 };
+			return result;
+		}
+		else if(string.equals("education"))
+		{
+			double[] result = { -3.5, 4.0, 1.5, -2.5 };
+			return result;
+		}
+		else
+		{
+			double[] result = { 0.0, 0.0, 0.0, 0.0 };
+			return result;
+		}
+		
 	}
 	private int parseAge(String string) {
 		try{

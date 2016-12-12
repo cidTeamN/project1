@@ -4,5 +4,6 @@
 	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.USER_LIBRARY/lib"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/usr_lib"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/dec_usr_lib"/>
 	<classpathentry kind="output" path=""/>
 </classpath>

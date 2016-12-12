@@ -2,3 +2,8 @@
 /QueueList.class
 /Server.class
 /HttpNetwork.class
+/PortThread.class
+/QueueEntity.class
+/QueueEntityComparator.class
+/RequestServerThread.class
+/SubscribeServerThread.class
