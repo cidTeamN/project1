@@ -36,7 +36,7 @@ if(tmpgen != null) {
 	}
 }
 else {
-	gen = "NULL";
+	gen = "man,woman";
 }
 Info.put("gen",gen);
 if(tmpcat != null) {
@@ -47,7 +47,7 @@ if(tmpcat != null) {
 	}
 }
 else {
-	cat = "NULL";
+	cat = "cat1,cat2,cat3,cat4,cat5,cat6,cat7,cat8,cat9,cat10,cat11,cat12,cat13,cat14,cat15,cat16,cat17,cat18,cat19,cat20,cat21,cat22,cat23";
 }
 Info.put("cat",cat);
 if(tmpyear != null) {
@@ -58,7 +58,7 @@ if(tmpyear != null) {
 	}
 }
 else {
-	year = "NULL";
+	year = "year1,year2,year3,year4,year5";
 }
 Info.put("year",year);
 Info.put("len",len);
@@ -67,8 +67,8 @@ Info.put("upload",upload);
 out.print(Info);
 
 String sResult = "";
-String sTargetUrl = "192.168.219.108";
-Socket socket = new Socket(sTargetUrl, 8765);
+String sTargetUrl = "cidteamn.ddns.net";
+Socket socket = new Socket(sTargetUrl, 8888);
 System.out.println("Connected to host");
 try {
 	DataOutputStream output = null;
