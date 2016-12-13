@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.FileWriter;
 import java.io.OutputStreamWriter;
 import java.io.BufferedWriter;
@@ -22,6 +23,8 @@ import java.nio.file.Paths;
 import javax.net.ssl.HttpsURLConnection;
 
 import org.apache.commons.io.FileUtils;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 
 
@@ -75,51 +78,29 @@ public class HttpServer {
 				long time = System.currentTimeMillis();
 				request.parse();
 				
-				/*
-				 * 여기서 다시 http reqeust 보내야
-				 */
 				
-				
-				//JSON user = new JSON("123", "male", "1020", "game");
-				if(!request.getUri().equals("/favicon.ico") && !request.getUri().equals("/total.html")){
+				if(!request.getUri().equals("/favicon.ico") && !request.getUri().equals("/result.html")){
 					json = request.getJSON().toString();
-				}
-				/*
+		
+				Socket socket2 = new Socket("cidteamn.ddns.net", 7080);
+				DataInputStream in2 = new DataInputStream(socket2.getInputStream());
+				DataOutputStream out2 = new DataOutputStream(socket2.getOutputStream());
 				
-				Socket insocket = new Socket(InetAddress.getByName("cidteamn.ddns.net"), 7080);
-				String path = "/myapp";
-
-				// Send headers
-				BufferedWriter wr =
-	     new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF8"));
-			//	wr.write("POST "+path+" HTTP/1.0\r\n");
-			//	wr.write("Content-Length: "+json.length()+"\r\n\r\n");
-			//	wr.write("Content-Type: application/x-www-form-urlencodedrn");
-			//	wr.write("\r\n");
-
-				// Send parameters
-				wr.write(json);
-				wr.flush();
-
-				// Get response
-				BufferedReader rd = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-				String line;
+				out2.writeUTF(json);
+				String result2 = null;
+				while((result2=in2.readUTF())==null){}
+				JSONParser parser = new JSONParser();
+				JSONObject jsonObject = (JSONObject) parser.parse(result2);
+				String imageUrl = (String) jsonObject.get("url");
+				ads = imageUrl;
 				
-				while ((line = rd.readLine()) != null) {
-					ads = line;
-				    System.out.println(line);
 				}
 				
-				wr.close();
-				rd.close();
-				*/
 				
-	//			String campaign = sendPost(json);
-//			sendGet();	
 				
-				if(!request.getUri().equals("/favicon.ico") && !request.getUri().equals("/total.html")){
-				FileWriter fWriter = null;
-				BufferedWriter writer = null;
+				if(!request.getUri().equals("/favicon.ico") && !request.getUri().equals("/result.html")){
+		//		FileWriter fWriter = null;
+		//		BufferedWriter writer = null;
 		
 				String file = "webroot3/" + request.getUri().substring(0);
 				String newFile = "webroot3/" + request.getid()+".html";

@@ -34,7 +34,7 @@ public class Request {
 		uri = parseUri(requestbuffer.toString());
 		System.out.println("url "+ uri);
 		if(uri.contains("%22") && ! (uri == null)) uri = remove(uri);
-		if(!(uri.equals("/favicon.ico") || uri.equals("/total.html")))
+		if(!(uri.equals("/favicon.ico") || uri.equals("/result.html")))
 		{
 			info = getJSONInfo(uri);
 			uri = removeParam(uri);
