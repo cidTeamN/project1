@@ -108,6 +108,8 @@ public class SubscribeServerThread extends Thread{
 			jedis.close();
 		}
 		if(pool != null) pool.close();
+		String userInfoKey = (String)data.get("upload")+"|"+(String)data.get("title");
+		jedisWrite(userInfoKey, "0");
 	}
 	
 	public void service() throws IOException{
@@ -153,5 +155,22 @@ public class SubscribeServerThread extends Thread{
 	public void closeAll() throws IOException{
 		if(dataInputStream != null) dataInputStream.close();
 		if(socket != null) socket.close();
+	}
+	public static void jedisWrite(String key, String value)
+	{
+		Socket s = null;
+		DataOutputStream out = null;
+		try{
+			s = new Socket("192.168.219.119", 7760);
+			out = new DataOutputStream(s.getOutputStream());
+			out.writeUTF(key+"@"+value);
+			out.flush();
+		}catch(Exception e){ return; }
+		finally{
+			try{
+				if(out!=null) out.close();
+				if(s!=null) s.close();
+			}catch(Exception e){ return; }
+		}
 	}
 }

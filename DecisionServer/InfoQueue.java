@@ -48,6 +48,7 @@ public class InfoQueue
 			if(it.ID == key)
 			{
 				info.remove(it);
+				break;
 			}
 		}
 	}

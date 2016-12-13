@@ -17,8 +17,8 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 public class RequestServerThread extends Thread{
 	private Socket socket;
-	BufferedReader dataInputStream;
-	OutputStreamWriter dataOutputStream;
+	DataInputStream dataInputStream;
+	DataOutputStream dataOutputStream;
 	static JedisPoolConfig jedisPoolConfig;
 	static JSONParser parser;
 	RequestServerThread(Socket s){
@@ -63,13 +63,26 @@ public class RequestServerThread extends Thread{
 	{
 		int AdID = -1;	// AdID = -1 -> ad for RTB system
 		int qid = info.findNearestQueueID(usersex, userrating, cat);
+		System.out.println("nearest Queue: "+qid);
 		Comparator<QueueEntity> cmp = new QueueEntityComparator();
 		PriorityQueue<QueueEntity> selectedQueue = info.getQueue(qid);
+
+		Iterator<QueueEntity> iter1 = selectedQueue.iterator();
+		while(iter1.hasNext())
+		{
+			QueueEntity tempNode = iter1.next();
+			System.out.println(tempNode.ID+":"+tempNode.var);
+		}
+		System.out.println();
+
 		PriorityQueue<QueueEntity> calculatedQueue = new PriorityQueue<QueueEntity>(cmp);
 		QueueEntity e = null;
 		long unixTimeNow = System.currentTimeMillis() / 1000L;
-		while((e = selectedQueue.poll()) != null)
+		
+		Iterator<QueueEntity> sIter = selectedQueue.iterator();
+		while(sIter.hasNext())
 		{
+			e = sIter.next();
 			QueueEntity rated = rating(e, unixTimeNow);
 			if(rated == null)
 			{
@@ -79,13 +92,15 @@ public class RequestServerThread extends Thread{
 			}
 			else
 			{
+				System.out.println("added calculated queue");
 				calculatedQueue.add(rated);
 			}
 		}
 		
 		if(calculatedQueue.size() == 0) return -1;
+		
 		// TODO send bidding request to bid server for 10% elements in calculatedQueue. percent can be changed
-		int cQueueLen = calculatedQueue.size() / 10 + 1;
+		int cQueueLen = Math.min(calculatedQueue.size(), Math.max(calculatedQueue.size() / 10, 5));
 		
 		JedisPool pool = new JedisPool(jedisPoolConfig, "localhost", 6379);
 		Jedis jedis = pool.getResource();
@@ -94,14 +109,19 @@ public class RequestServerThread extends Thread{
 		PriorityQueue<QueueEntity> finalListQueue = new PriorityQueue<QueueEntity>(cmp);
 		for(int i=0;i<cQueueLen; ++i)
 		{
+			System.out.println("for loop...");
 			QueueEntity it = iter.next();
 			String url = null;
 			String title = null;
 			try {
 				data = (JSONObject) parser.parse(jedis.get(""+it.ID));
-				url = (String) data.get("url");
+				// TODO when subscribe server supports ip address, url should be changed
+				//url = (String) data.get("url");
+				url = "192.168.219.107";
 				title = (String) data.get("title");
+				System.out.println(url+"$"+title);
 			} catch (org.json.simple.parser.ParseException e1) {
+				System.out.println("parsing error...");
 				continue;
 			}
 			if(url==null) continue;
@@ -110,6 +130,7 @@ public class RequestServerThread extends Thread{
 			QueueEntity entity = ratingWithPrice(it, url, title);
 			if(entity != null) finalListQueue.add(entity);
 		}
+		
 		if(finalListQueue.size() == 0) 
 		{
 			pool.close();
@@ -137,10 +158,12 @@ public class RequestServerThread extends Thread{
 			
 			JSONObject priceJSON = (JSONObject) parser.parse(strRslt);
 			String strPrice = (String) priceJSON.get("price");
+			
 			if(out!=null) out.close();
 			if(in!=null) in.close();
 			if(smallSocket!=null) smallSocket.close();
 			// TODO price reflection rate can be changed
+			if(Integer.parseInt(strPrice) == 0) return null;
 			it.var = it.var*0.5 + Integer.parseInt(strPrice)*0.5;
 			return it;
 		} catch (Exception e) {
@@ -153,6 +176,7 @@ public class RequestServerThread extends Thread{
 	{
 		JedisPool pool = new JedisPool(jedisPoolConfig, "localhost", 6379);
 		String keyString = ((Integer) e.ID).toString();
+		System.out.println("rating, ID: "+keyString);
 		Jedis jedis = pool.getResource();
 		JSONObject data = null;
 		try{
@@ -184,7 +208,7 @@ public class RequestServerThread extends Thread{
 		int len = Integer.parseInt(str);
 		
 		e.var = AHP(e.var, urgency, len);
-		
+		System.out.println("result e :"+e.ID+":"+e.var);
 		jedis.close();
 		pool.close();
 		return e;
@@ -205,46 +229,34 @@ public class RequestServerThread extends Thread{
 		}
 	}
 	public void service() throws IOException{
+
+		long time = System.currentTimeMillis();
+		
 		System.out.println("request start");
-		dataInputStream = new BufferedReader(new InputStreamReader(socket.getInputStream(), "EUC-KR"));
-		dataOutputStream = new OutputStreamWriter(socket.getOutputStream());
+		dataInputStream = new DataInputStream(socket.getInputStream());
+		dataOutputStream = new DataOutputStream(socket.getOutputStream());
 		
 		System.out.println("stream get");
 		String strRslt ="";
-		char charRslt = (char) -1;
-		boolean start = false;
-		while(true)
+		while((strRslt = dataInputStream.readUTF()) == null)
 		{
-			//System.out.println(socket.getInetAddress());
-			//strRslt=dataInputStream.readLine();
-			charRslt=(char) dataInputStream.read();
-			if(charRslt=='{')
-			{
-				start = true;
-			}
-			if(start)
-			{
-				strRslt += charRslt;
-				System.out.print((char)charRslt);
-			}
-			if(charRslt=='}')
-			{
-				start = false;
-				break;
-			}
 		}
 		//if(dataInputStream != null) dataInputStream.close();
 		
-		
 		System.out.println("content : "+strRslt);
 		System.out.println("length : "+strRslt.length());
-		String clientName = socket.getInetAddress().getHostName();
+		
+		// TODO clientName receiving should be written
+		String clientName = socket.getInetAddress().getHostAddress();
+		
 		String userInfo = strRslt;
 		JSONObject data = null;
 		JSONObject userData = null;
+		int AdID = -1;
 		//strRslt = strRslt.toString();
 		String imageUrlJson = "{\"url\": \"https://www.hello.com/img_/hello_logo_hero.png\"}";
 		try{
+			
 			userData = (JSONObject) parser.parse(userInfo);
 			int usersex = parseGender((String) userData.get("usersex"));
 			int userrating = parseAge((String) userData.get("userrating"));
@@ -252,7 +264,11 @@ public class RequestServerThread extends Thread{
 			System.out.println((String) userData.get("usersex"));
 			System.out.println((String) userData.get("userrating"));
 			System.out.println((String) userData.get("cat"));
-			int AdID = getAdID(usersex, userrating, cat);
+			
+			
+			AdID = getAdID(usersex, userrating, cat);
+			
+			System.out.println("AdID="+AdID);
 			if(AdID != -1)
 			{
 				String keyString = ((Integer) AdID).toString();
@@ -269,22 +285,53 @@ public class RequestServerThread extends Thread{
 				imageUrlJson = "{\"url\" \""+imageUrl+"\"}";
 				
 			}
+
 			try{
-				dataOutputStream.write(imageUrlJson);
+				dataOutputStream.writeUTF(imageUrlJson);
+				dataOutputStream.flush();
 				System.out.println("Writing");
 			}catch(Exception e){ e.printStackTrace(); }
 			
-			try{
-				dataOutputStream.flush();
-			}catch(Exception e){ e.printStackTrace(); }
+			
 			System.out.println("Write end");
 			if(dataOutputStream != null) dataOutputStream.close();
 			if(dataInputStream != null) dataInputStream.close();
 			closeAll();
-			JedisPool pool2 = new JedisPool(jedisPoolConfig, "192.168.219.119", 6379);
-			Jedis jedis2 = pool2.getResource();
 			
-			String userInfoKey = (String)data.get("url")+"|"+(String)data.get("title");
+			time = System.currentTimeMillis() - time;
+			System.out.println("time for computing AD : "+ time);
+			time = System.currentTimeMillis();
+			
+			
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		
+		JedisPool pool = new JedisPool(jedisPoolConfig, "localhost", 6379);
+		Jedis jedis = pool.getResource();
+		try{
+			String lengthData = (String) jedis.get(AdID+"|len");
+			Integer length = Integer.parseInt(lengthData) - 1;
+			if(length == 0)
+			{
+				jedis.expire(AdID+"", 0);
+				jedis.expire(AdID+"|len", 0);
+			}
+			else
+			{
+				lengthData = length.toString();
+				jedis.set(AdID+"|len", lengthData);
+			}
+		}catch(Exception error)
+		{
+		}
+		pool.close();
+		jedis.close();
+		
+		if(AdID!=-1){	// Log writing
+			// TODO infokey upload -> ip address
+			String userInfoKey = (String)data.get("upload")+"|"+(String)data.get("title");
 			String userInfoLog = "{\"client\":\""+clientName+
 					"\",\"time\":\""+getTimeString()+
 					"\",\"usersex\":\""+userData.get("usersex")+
@@ -292,25 +339,24 @@ public class RequestServerThread extends Thread{
 					"\",\"cat\":\""+userData.get("cat")+
 					"\"}";
 			
-			String infoLength = jedis2.get(userInfoKey);
+			String infoLength = jedisRead(userInfoKey);
 			String indexStr = infoLength;
 			if(infoLength==null)
 			{
-				jedis2.set(userInfoKey, "0");
+				jedisWrite(userInfoKey, "0");
 				indexStr = "0";
 			}
 			else
 			{
 				Integer index = Integer.parseInt(infoLength)+1;
-				jedis2.set(userInfoKey, index.toString());
+				jedisWrite(userInfoKey, index.toString());
 			}
-			// TODO log data key setting
-			jedis2.set(userInfoKey+":"+indexStr, userInfoLog);
-			pool2.close();
-			jedis2.close();
-		}catch(Exception e){
-			e.printStackTrace();
-		};
+			jedisWrite(userInfoKey+":"+indexStr, userInfoLog);
+			
+			time = System.currentTimeMillis() - time;
+			System.out.println("time for logging : "+ time);
+			time = System.currentTimeMillis();
+		}
 		
 		
 		
@@ -458,7 +504,7 @@ public class RequestServerThread extends Thread{
 		try{
 			s = new Socket("192.168.219.119", 7760);
 			out = new DataOutputStream(s.getOutputStream());
-			out.writeUTF(key+"$"+value);
+			out.writeUTF(key+"@"+value);
 			out.flush();
 		}catch(Exception e){ return; }
 		finally{
