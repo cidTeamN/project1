@@ -40,10 +40,10 @@ public class RequestServerThread extends Thread{
 		SubscribeServerThread st = new SubscribeServerThread(null);
 		st.setQueueList(info);
 	}
-	public static double AHP(double var, double urgency, int len)	//TODO computing
+	public static double AHP(double var, double urgency, int len)
 	{
 		// Implement AHP
-		return var*urgency*len;
+		return var*0.24+urgency*0.63+len*0.13;
 	}
 	
 	public static long toUnixTimeStamp(String season)
@@ -115,8 +115,6 @@ public class RequestServerThread extends Thread{
 			String title = null;
 			try {
 				data = (JSONObject) parser.parse(jedis.get(""+it.ID));
-				// TODO when subscribe server supports ip address, url should be changed
-				//url = (String) data.get("url");
 				url = "192.168.219.107";
 				title = (String) data.get("title");
 				System.out.println(url+"$"+title);
@@ -164,7 +162,7 @@ public class RequestServerThread extends Thread{
 			if(smallSocket!=null) smallSocket.close();
 			// TODO price reflection rate can be changed
 			if(Integer.parseInt(strPrice) == 0) return null;
-			it.var = it.var*0.5 + Integer.parseInt(strPrice)*0.5;
+			it.var = it.var*0.25 + Integer.parseInt(strPrice)*0.003*0.75;
 			return it;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -196,7 +194,7 @@ public class RequestServerThread extends Thread{
 			return null;
 		}
 		// TODO computing
-		double urgency = 1 / (double)time;
+		double urgency = 864000 / (double)time;		// mean = 10 days
 		String str = null;
 		try{
 			str = jedis.get(keyString+"|len");
@@ -282,7 +280,7 @@ public class RequestServerThread extends Thread{
 				pool.close();
 				jedis.close();
 				String imageUrl = (String) data.get("upload");
-				imageUrlJson = "{\"url\" \""+imageUrl+"\"}";
+				imageUrlJson = "{\"url\":\""+imageUrl+"\"}";
 				
 			}
 
@@ -330,8 +328,9 @@ public class RequestServerThread extends Thread{
 		jedis.close();
 		
 		if(AdID!=-1){	// Log writing
-			// TODO infokey upload -> ip address
-			String userInfoKey = (String)data.get("upload")+"|"+(String)data.get("title");
+			//String bidderUrl = (String)data.get("url");	// for multi bidder server
+			String bidderUrl = "192.168.219.107";
+			String userInfoKey = bidderUrl +"|"+(String)data.get("title");
 			String userInfoLog = "{\"client\":\""+clientName+
 					"\",\"time\":\""+getTimeString()+
 					"\",\"usersex\":\""+userData.get("usersex")+

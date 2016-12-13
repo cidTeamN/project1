@@ -62,8 +62,8 @@ public class QueueList
 			String userratingStr = (String) data.get("year");
 			String catStr = (String) data.get("cat");
 			
-			double[] usersex = {0, 0};
-			double[] userrating = {0, 0, 0, 0, 0};
+			int[] usersex = {0, 0};
+			int[] userrating = {0, 0, 0, 0, 0};
 			double[] cat = {0, 0, 0, 0};
 			
 			// parsing

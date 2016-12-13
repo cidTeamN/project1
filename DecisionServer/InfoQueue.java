@@ -4,7 +4,7 @@ import java.util.PriorityQueue;
 
 public class InfoQueue
 {
-	double MIN_VAR = 0.1;
+	double MIN_VAR = 20;
 	double MAX_SCORE = 10;
 	double CAT_RATE = 0.5;
 	PriorityQueue<QueueEntity> info;
@@ -53,52 +53,64 @@ public class InfoQueue
 		}
 	}
 	// TODO calculating rule can be changed
-	public double scoring(double[] usersex_, double[] userrating_, double[] cat_)
+	public double scoring(int[] usersex_, int[] userrating_, double[] cat_)
 	{
-		double score = 0;
+		double genderScore = 0;
 		
 		for(int i=0;i<2;++i)
 		{
-			if(usersex_[i] != usersex[i])
-				score = score + 1;
+			if(usersex_[i] == usersex[i])
+				genderScore = genderScore + 1;
 			else
 				continue;
 		}
+		genderScore = genderScore / 2;
+		double total = 0;
+		double ageScore = 0;
 		for(int i=0;i<5;++i)
 		{
-			if(userrating_[i] == userrating[i])
-				score = score + 1;
+			total += userrating[i];
+			if(userrating_[i]==1 && userrating[i]==1)
+				ageScore += 1;
 			else
 				continue;
 		}
-		score = score + catDistance(cat_) + MIN_VAR;
-		
-		score = MAX_SCORE / score;
-		return score;
+		ageScore = ageScore / total;
+
+		double catScore = catDistance(cat_);
+		catScore = (MIN_VAR)/(catDistance(cat_)+MIN_VAR);
+		double finalScore = (genderScore + ageScore + catScore) / 3;
+		return finalScore;
 	}
 	// TODO scoring functions should be changed identically
 	public double scoring(int usersex_, int userrating_, double[] cat_)
 	{
-		double score = 0;
-		
+		double genderScore = 0;
+		double genderTotal = 0;
 		for(int i=0;i<2;++i)
 		{
-			if((i == usersex_) ^ (0 == usersex[i]))
-				score = score + 1;
+			genderTotal += usersex[i];
+			if((i == usersex_) && (1 == usersex[i]))
+				genderScore = genderScore + 1;
 			else
 				continue;
 		}
+		genderScore = genderScore / genderTotal;
+		double ageScore = 0;
+		double ageTotal = 0;
 		for(int i=0;i<5;++i)
 		{
-			if((i == userrating_-1) ^ (0 == userrating[i]))
-				score = score + 1;
+			ageTotal += userrating[i];
+			if((i == userrating_-1) && (1 == userrating[i]))
+				ageScore += 1;
 			else
 				continue;
 		}
-		score = score + catDistance(cat_) + MIN_VAR;
-		
-		score = MAX_SCORE / score;
-		return score;
+		ageScore = ageScore / ageTotal;
+		double catScore = catDistance(cat_);
+		catScore = (MIN_VAR)/(catDistance(cat_)+MIN_VAR);
+		double finalScore = (genderScore + ageScore + catScore) / 3;
+		return finalScore;
 	}
 	
 	public double catDistance(double[] cat_)
@@ -109,7 +121,7 @@ public class InfoQueue
 		{
 			dist += (cat[0]-cat_[0]) * (cat[0]-cat_[0]);
 		}
-		return CAT_RATE * dist;
+		return dist;
 	}
 	public void print()
 	{
