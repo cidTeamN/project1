@@ -2,6 +2,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.Charset;
 
 
 public class Response {
@@ -16,6 +19,15 @@ public class Response {
 	
 	public void setRequest(Request request) {
 		this.request = request;
+	}
+	public void sendResponse() throws IOException{
+		StringBuffer sb = new StringBuffer();
+		sb.append("HTTP/1.1 200 OK\r\n");
+        sb.append("Content-Type: text/html\r\n\r\n");
+        sb.append("<html><head></head><body><h1>Hello</h1></body></html>");
+		output.write(sb.toString().getBytes(Charset.forName("UTF-8")));
+		
+
 	}
 	
 	public void sendStaticResource() throws IOException {

@@ -31,7 +31,7 @@ public class JSON {
 		print.append("\"id\": \""+id+"\",");
 		print.append("\"usersex\": \""+userSexString+"\",");
 		print.append("\"userrating\": \""+userRatingString+"\",");
-		print.append("\"cat\": \""+catString);
+		print.append("\"cat\": \""+catString+"\"");
 		print.append("}");
 		
 		return print.toString();

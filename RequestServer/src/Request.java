@@ -6,6 +6,8 @@ public class Request {
 	
 	private InputStream input;
 	private String uri;
+	private JSON info;
+	private String id;
 	
 	public Request(InputStream input) {
 		this.input = input;
@@ -30,9 +32,51 @@ public class Request {
 		
 		System.out.println(requestbuffer.toString());
 		uri = parseUri(requestbuffer.toString());
-		uri = removeParam(uri);
+		System.out.println("url "+ uri);
+		if(uri.contains("%22") && ! (uri == null)) uri = remove(uri);
+		if(!(uri.equals("/favicon.ico") || uri.equals("/total.html")))
+		{
+			info = getJSONInfo(uri);
+			uri = removeParam(uri);
+		}
+	}
+	public String getid(){
+		return this.id;
 	}
 	
+	public JSON getJSON(){
+		return this.info;
+	}
+	
+	private JSON getJSONInfo(String uri2) {
+		// TODO Auto-generated method stub
+		System.out.println("re2: "+uri2);
+		String temp[] = uri2.split("\\?");
+		String infoUri =  temp[1];
+	
+		
+		String infoTemp[] = infoUri.split("\\&");
+		String id = infoTemp[0].substring(3);
+		this.id = id;
+		System.out.println("id "+id);
+		//gender=male
+		String gender = infoTemp[1].substring(7);
+		System.out.println("gender "+gender);
+		//age=1020
+		String age = infoTemp[2].substring(4);
+		//cat=game
+		String cat = infoTemp[3].substring(5);
+		
+		JSON info = new JSON(id, gender, age, cat);
+		
+		return info;
+	}
+	
+	private String remove(String url){
+		String valid[] = url.split("/");
+		return valid[2];
+	}
+
 	private String parseUri(String requestString) {
 		int index1, index2;
 		
@@ -60,5 +104,10 @@ public class Request {
 	
 	public String getUri() {
 		return this.uri;
+	}
+
+	public void setUri(String string) {
+		// TODO Auto-generated method stub
+		this.uri = string;
 	}
 }
