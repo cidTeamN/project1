@@ -65,7 +65,9 @@ public class Request {
 		//age=1020
 		String age = infoTemp[2].substring(4);
 		//cat=game
-		String cat = infoTemp[3].substring(5);
+		String cat = infoTemp[3].substring(4);
+		System.out.println("cat "+cat);
+
 		
 		JSON info = new JSON(id, gender, age, cat);
 		
