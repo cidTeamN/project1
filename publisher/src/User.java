@@ -15,6 +15,7 @@ public class User{
 		ArrayList<String> userrating = new ArrayList<String>(5);
 		ArrayList<String> cat = new ArrayList<String>(10);
 		ArrayList<String> urlList = new ArrayList<String>(num);
+		ArrayList<String> userList = new ArrayList<String>(num);
 
 		user_sex.add("male");
 		user_sex.add("female");
@@ -39,22 +40,29 @@ public class User{
 
 		
 		StringBuffer sb = new StringBuffer();
+		StringBuffer sbResult = new StringBuffer();
 	//	sb.append("[");
 		for(int i = 0 ; i < num ; i++){
 			int ran_ip = random.nextInt(99999);
 
 			String ran_sex = user_sex.get(random.nextInt(9999) % 2);
 			String ran_rating = userrating.get(random.nextInt(9999) % 5);
-			String ran_cat = cat.get(random.nextInt(9999) % 10);
+		//	String ran_cat = cat.get(random.nextInt(9999) % 10);
 			int ran_cat_id = (random.nextInt(9999) % 23) + 1;
 			
 			sb.append("?id="+ran_ip);
 			sb.append("&gender="+ran_sex);
+			sbResult.append("gender: "+ran_sex);
 			sb.append("&age="+ran_rating);
+			sbResult.append(" age: "+ran_rating);
 			sb.append("&cat="+ran_cat_id);
+			sbResult.append(" cat: "+ ran_cat_id);
 			
 			String urlParam = sb.toString();
+			String userData = sbResult.toString();
+			userList.add(userData);
 			urlList.add(urlParam);
+			sbResult.setLength(0);
 			sb.setLength(0);
 		}
 
@@ -68,7 +76,8 @@ public class User{
 			String htmlString = FileUtils.readFileToString(htmlTemplateFile, Charset.forName("UTF-8"));
 			
 			for(int i = 0 ; i < num ; i++){
-				htmlString = htmlString.replaceAll("%url"+(i+1), urlList.get(i));
+				htmlString = htmlString.replace("%user"+ (i+1), userList.get(i));
+				htmlString = htmlString.replace("%url"+(i+1), urlList.get(i));
 			}
 			
 			
@@ -76,24 +85,7 @@ public class User{
 			FileUtils.writeStringToFile(newHtmlFile, htmlString,StandardCharsets.UTF_8);
 			
 			
-			
-
-/*
-			sb.append("{");
-			sb.append("\"type\": \"request\",");
-			sb.append("\"ip\": \"" + ran_ip + "\",");
-			sb.append("\"user_sex\": \"" + ran_sex + "\",");
-			sb.append("\"userrating\": \"" + ran_rating + "\",");
-			sb.append("\"cat\": \"" + ran_cat + "\"");
-			sb.append("}");
-			if(i != num-1) sb.append(", ");		
-			*/
-		}
-
-		//sb.append("]");
-
-	//	System.out.println(sb.toString());
-
+	}
 
 
 }

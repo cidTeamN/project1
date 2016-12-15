@@ -81,10 +81,13 @@ public class HttpServer {
 				request.parse();
 				
 				
+				
 				if(!request.getUri().equals("/favicon.ico") && !request.getUri().equals("/result.html")){
 					json = request.getJSON().toString();
 		
+				
 				Socket socket2 = new Socket("cidteamn.ddns.net", 7080);
+		//		System.out.println("connection done");
 				DataInputStream in2 = new DataInputStream(socket2.getInputStream());
 				DataOutputStream out2 = new DataOutputStream(socket2.getOutputStream());
 				
@@ -99,8 +102,9 @@ public class HttpServer {
 				String imageUrl = (String) jsonObject.get("url");
 				ads = imageUrl;
 				
+			
 				}
-				
+		//		System.out.println("connectin done!!");
 				
 				
 				if(!request.getUri().equals("/favicon.ico") && !request.getUri().equals("/result.html")){
