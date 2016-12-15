@@ -9,8 +9,35 @@ import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.FileUtils;
 
 public class User{
-	public static void main(String args[]) throws IOException{
-		int num = Integer.parseInt(args[0]);
+	public static void main(String args[]) throws IOException, InterruptedException{
+		String[] catIndex = 
+			{
+					"예술/연예",
+					"자동차",
+					"사업/사무",
+					"직업/학업",
+					"교육",
+					"가정/육아",
+					"건강/운동",
+					"식문화",
+					"취미생활",
+					"인테리어/원예",
+					"정치/법",
+					"뉴스",
+					"경제",
+					"사회",
+					"과학",
+					"애완동물",
+					"스포츠",
+					"패션",
+					"기술/컴퓨팅",
+					"여행",
+					"부동산",
+					"쇼핑",
+					"종교",
+			};
+		while(true){
+		int num = 5;
 		ArrayList<String> user_sex = new ArrayList<String>(2);
 		ArrayList<String> userrating = new ArrayList<String>(5);
 		ArrayList<String> cat = new ArrayList<String>(10);
@@ -56,7 +83,7 @@ public class User{
 			sb.append("&age="+ran_rating);
 			sbResult.append(" age: "+ran_rating);
 			sb.append("&cat="+ran_cat_id);
-			sbResult.append(" cat: "+ ran_cat_id);
+			sbResult.append(" cat: "+ catIndex[ran_cat_id]);
 			
 			String urlParam = sb.toString();
 			String userData = sbResult.toString();
@@ -83,7 +110,8 @@ public class User{
 			
 			File newHtmlFile = new File(newFile);
 			FileUtils.writeStringToFile(newHtmlFile, htmlString,StandardCharsets.UTF_8);
-			
+			Thread.sleep(3000);
+		}
 			
 	}
 
